@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 async-compression = { version = "0.4", features = ["brotli", "tokio"] }
 axum = { git = "https://github.com/tokio-rs/axum", branch = "main", default-features = false }
-blake3 = "1"
 bytes = "1"
 futures-core = "0.3"
 pin-project-lite = "0.2"

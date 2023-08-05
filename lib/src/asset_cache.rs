@@ -80,14 +80,8 @@ impl AssetCache {
                     continue;
                 };
 
-                let hash = {
-                    let mut hasher = blake3::Hasher::new();
-                    hasher.update(&bytes);
-                    hasher.finalize()
-                };
-
                 let contents = match ext {
-                    "css" | "js" => compress_data(&bytes).await,
+                    "css" | "js" => compress_data(&bytes).await.unwrap_or_default(),
                     _ => bytes.into(),
                 };
 
@@ -99,10 +93,14 @@ impl AssetCache {
                         path: stored_path,
                         contents,
                         content_type: MimeType::from_extension(ext),
-                        hash: *hash.as_bytes(),
                     },
                 );
             }
+        }
+
+        tracing::debug!("loaded {} assets", cache.len());
+        for (key, asset) in &cache {
+            tracing::debug!("{}: {}", key, asset.path);
         }
 
         Self::new(cache)

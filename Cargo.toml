@@ -16,13 +16,11 @@ axum-extra = { version = "0.7", default-features = false, features = [
     "cookie-private",
 ] }
 axum-htmx = { git = "https://github.com/robertwayne/axum-htmx", branch = "main" }
-
 bytes = "1"
 dotenvy = "0.15"
 minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
     "loader",
 ] }
-
 serde = "1"
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
