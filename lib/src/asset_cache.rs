@@ -1,9 +1,10 @@
 use async_compression::tokio::write::BrotliEncoder;
 use axum::extract::Path;
 use bytes::Bytes;
-use lib::mime::MimeType;
 use rustc_hash::FxHashMap;
 use tokio::io::AsyncWriteExt;
+
+use crate::mime::MimeType;
 
 /// A shared reference to the static asset cache.
 pub type SharedAssetCache = &'static AssetCache;
@@ -40,6 +41,72 @@ impl AssetCache {
 
         format!("{}.{}", basename, ext)
     }
+
+    pub async fn load_files() -> Self {
+        let mut cache = FxHashMap::default();
+
+        if let Ok(files) = std::fs::read_dir("build") {
+            for file in files {
+                let Ok(file) = file else {
+                    continue;
+                };
+
+                let path = file.path();
+
+                let Some(filename) = path.file_name() else {
+                    continue;
+                };
+
+                let Some(filename) = filename.to_str() else {
+                    continue;
+                };
+
+                let stored_path = path
+                    .clone()
+                    .into_os_string()
+                    .into_string()
+                    .unwrap_or_default()
+                    .replace("build/", "assets/");
+
+                let Ok(bytes) = std::fs::read(&path) else {
+                    continue;
+                };
+
+                let Some(ext) = path.extension() else {
+                    continue;
+                };
+
+                let Some(ext) = ext.to_str() else {
+                    continue;
+                };
+
+                let hash = {
+                    let mut hasher = blake3::Hasher::new();
+                    hasher.update(&bytes);
+                    hasher.finalize()
+                };
+
+                let contents = match ext {
+                    "css" | "js" => compress_data(&bytes).await,
+                    _ => bytes.into(),
+                };
+
+                let key = Self::get_cache_key(filename);
+
+                cache.insert(
+                    key,
+                    StaticAsset {
+                        path: stored_path,
+                        contents,
+                        content_type: MimeType::from_extension(ext),
+                        hash: *hash.as_bytes(),
+                    },
+                );
+            }
+        }
+
+        Self::new(cache)
+    }
 }
 
 /// Represents a single static asset from the build directory. Assets are
@@ -66,70 +133,4 @@ async fn compress_data(bytes: &[u8]) -> Bytes {
     }
 
     Bytes::from(encoder.into_inner())
-}
-
-pub async fn generate_static_asset_cache() -> AssetCache {
-    let mut cache = FxHashMap::default();
-
-    if let Ok(files) = std::fs::read_dir("build") {
-        for file in files {
-            let Ok(file) = file else {
-                continue;
-            };
-
-            let path = file.path();
-
-            let Some(filename) = path.file_name() else {
-                continue;
-            };
-
-            let Some(filename) = filename.to_str() else {
-                continue;
-            };
-
-            let stored_path = path
-                .clone()
-                .into_os_string()
-                .into_string()
-                .unwrap_or_default()
-                .replace("build/", "assets/");
-
-            let Ok(bytes) = std::fs::read(&path) else {
-                continue;
-            };
-
-            let Some(ext) = path.extension() else {
-                continue;
-            };
-
-            let Some(ext) = ext.to_str() else {
-                continue;
-            };
-
-            let hash = {
-                let mut hasher = blake3::Hasher::new();
-                hasher.update(&bytes);
-                hasher.finalize()
-            };
-
-            let contents = match ext {
-                "css" | "js" => compress_data(&bytes).await,
-                _ => bytes.into(),
-            };
-
-            let key = AssetCache::get_cache_key(filename);
-
-            cache.insert(
-                key,
-                StaticAsset {
-                    path: stored_path,
-                    contents,
-                    content_type: MimeType::from_extension(ext),
-                    hash: *hash.as_bytes(),
-                },
-            );
-        }
-    }
-
-    AssetCache::new(cache)
 }

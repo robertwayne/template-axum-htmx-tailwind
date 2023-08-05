@@ -1,6 +1,5 @@
+use lib::asset_cache::SharedAssetCache;
 use serde::Serialize;
-
-use crate::asset_cache::SharedAssetCache;
 
 pub mod index;
 pub mod not_found;

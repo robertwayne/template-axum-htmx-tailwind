@@ -1,7 +1,5 @@
 #![forbid(unsafe_code)]
 mod api_error;
-mod asset_cache;
-mod config;
 mod routes;
 mod state;
 
@@ -18,7 +16,10 @@ use axum::{
     Router,
 };
 use axum_extra::extract::cookie::Key;
-use lib::{cache_control::CacheControlLayer, leak_alloc, mime::MimeType};
+use lib::{
+    asset_cache::AssetCache, cache_control::CacheControlLayer, config::Config, leak_alloc,
+    mime::MimeType,
+};
 use minijinja::Environment;
 use routes::{
     index::{about, index},
@@ -33,10 +34,7 @@ use tower_http::{
 };
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-use crate::{
-    asset_cache::generate_static_asset_cache, config::Config, routes::BaseTemplateData,
-    state::AppState,
-};
+use crate::{routes::BaseTemplateData, state::AppState};
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     dotenvy::dotenv().ok();
@@ -58,7 +56,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
 async fn serve(config: &Config) -> Result<(), Box<dyn error::Error>> {
     let addr = SocketAddr::from_str(&format!("{}:{}", config.host, config.port))?;
     let pg = PgPool::connect(&config.postgres_url).await?;
-    let assets = leak_alloc(generate_static_asset_cache().await);
+    let assets = leak_alloc(AssetCache::load_files().await);
     let base_template_data = leak_alloc(BaseTemplateData::new(assets));
     let env = import_templates()?;
 

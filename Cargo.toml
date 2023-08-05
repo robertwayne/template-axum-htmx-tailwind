@@ -10,20 +10,19 @@ publish = false
 [dependencies]
 lib = { path = "lib" }
 
-async-compression = { version = "0.4", features = ["brotli", "tokio"] }
 axum = { git = "https://github.com/tokio-rs/axum", branch = "main" }
 axum-extra = { version = "0.7", default-features = false, features = [
     "cookie",
     "cookie-private",
 ] }
 axum-htmx = { git = "https://github.com/robertwayne/axum-htmx", branch = "main" }
-blake3 = "1"
+
 bytes = "1"
 dotenvy = "0.15"
 minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
     "loader",
 ] }
-rustc-hash = "1"
+
 serde = "1"
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres"] }
 tokio = { version = "1", features = ["rt-multi-thread"] }
