@@ -20,12 +20,12 @@ unstable main branch of `axum`, not the crates.io version._
 
 ## Notes
 
-- Internally caches JavaScript and CSS files, compressing them with `brotli` at
-  max compression level.
-- Dynamically compresses HTML fragments with `brotli` at a lower compression
-  level.
-- Sets Cache-Control headers for CSS, JS, WEBP, SVG, and WOFF2.
-- Uses `esbuild` via the `build.rs` script to bundle, hash, and minify
+- Internally caches JavaScript and CSS files, compressing them with at startup
+  with `brotli` at max compression level.
+- Compresses HTML fragments with `brotli` at a lower compression
+  level via `tower-compression` at runtime.
+- Sets Cache-Control headers for CSS, JS, WEBP, SVG, and WOFF2 by default.
+- Uses `esbuild` via the `build.rs` script to minify, hash, and bundle
   JS/TS/CSS.
 - Run with `cargo watch -x run` to automatically rebuild on asset / source
   changes.
