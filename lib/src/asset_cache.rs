@@ -115,20 +115,14 @@ pub struct StaticAsset {
     pub path: String,
     pub contents: Bytes,
     pub content_type: MimeType,
-    pub hash: [u8; 32],
 }
 
-async fn compress_data(bytes: &[u8]) -> Bytes {
+async fn compress_data(bytes: &[u8]) -> Result<Bytes, std::io::Error> {
     let mut encoder =
         BrotliEncoder::with_quality(Vec::new(), async_compression::Level::Precise(11));
 
-    if let Err(e) = encoder.write_all(bytes).await {
-        tracing::error!("Failed to compress data: {e}");
-    };
+    encoder.write_all(bytes).await?;
+    encoder.shutdown().await?;
 
-    if let Err(e) = encoder.shutdown().await {
-        tracing::error!("Failed to shutdown compression stream: {e}");
-    }
-
-    Bytes::from(encoder.into_inner())
+    Ok(Bytes::from(encoder.into_inner()))
 }
