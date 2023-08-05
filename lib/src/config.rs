@@ -2,7 +2,6 @@ pub struct Config {
     pub host: String,
     pub port: u16,
     pub cors_origin: String,
-    pub assets_dir: String,
     pub postgres_url: String,
     pub encryption_key: String,
 }
@@ -21,10 +20,6 @@ impl Config {
         #[rustfmt::skip]
         let cors_origin = std::env::var("CORS_ORIGIN")
             .unwrap_or_else(|_| "http://127.0.0.1:3000".to_string());
-
-        #[rustfmt::skip]
-        let assets_dir = std::env::var("ASSETS_DIR")
-            .unwrap_or_else(|_| "assets".to_string());
 
         #[rustfmt::skip]
         let postgres_url = std::env::var("DATABASE_URL")
@@ -54,7 +49,6 @@ impl Config {
             host,
             port,
             cors_origin,
-            assets_dir,
             postgres_url,
             encryption_key,
         }
