@@ -14,19 +14,13 @@ pub type SharedAssetCache = &'static AssetCache;
 /// disk, as the cache stays in RAM for the life of the server.
 ///
 /// This type should be accessed via the `cache` property in `AppState`.
-pub struct AssetCache {
-    inner: FxHashMap<String, StaticAsset>,
-}
+pub struct AssetCache(FxHashMap<String, StaticAsset>);
 
 impl AssetCache {
-    pub fn new(inner: FxHashMap<String, StaticAsset>) -> Self {
-        Self { inner }
-    }
-
     /// Attempts to return a static asset from the cache from a cache key. If
     /// the asset is not found, `None` is returned.
     pub fn get(&self, key: &str) -> Option<&StaticAsset> {
-        self.inner.get(key)
+        self.0.get(key)
     }
 
     /// Helper method to get a static asset from an extracted request path.
@@ -103,7 +97,7 @@ impl AssetCache {
             tracing::debug!("{}: {}", key, asset.path);
         }
 
-        Self::new(cache)
+        Self(cache)
     }
 }
 
