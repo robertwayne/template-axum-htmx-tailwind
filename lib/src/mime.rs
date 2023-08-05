@@ -25,7 +25,7 @@ impl MimeType {
         }
     }
 
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &str {
         match self {
             MimeType::CSS => "text/css",
             MimeType::HTML => "text/html",
