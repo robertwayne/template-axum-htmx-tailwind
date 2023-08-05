@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport"
+            content="width=device-width, height=device-height, initial-scale=1.0" />
+
+        <meta name="description"
+            content="A template for server-side rendered applications with the smoothness of an SPA via htmx, styled with Tailwind." />
+
+        <meta name="htmx-config" content='{"globalViewTransitions": "true" }' />
+
+        <link rel="icon" href="data:,">
+
+        <link rel="stylesheet" href="{{ base.styles }}" />
+        <script async src="{{ base.htmx }}"></script>
+
+        <title>Template: axum + htmx + tailwind</title>
+    </head>
+
+    <body
+        class="bg-light-primary text-light-secondary transition dark:bg-dark-primary dark:text-dark-secondary">
+        {% include "navbar.html" %}
+
+        <main class="flex flex-col items-center gap-2">
+            {% block main %} {% endblock %}
+        </main>
+    </body>
+
+</html>

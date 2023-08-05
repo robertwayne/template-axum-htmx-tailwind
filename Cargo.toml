@@ -1,0 +1,42 @@
+[package]
+name = "template-axum-htmx-tailwind"
+authors = ["Rob Wagner <rob@sombia.com>"]
+license = ""
+repository = "https://github.com/robertwayne/template-axum-htmx-tailwind"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+lib = { path = "lib" }
+
+async-compression = { version = "0.4", features = ["brotli", "tokio"] }
+axum = { git = "https://github.com/tokio-rs/axum", branch = "main" }
+axum-extra = { version = "0.7", default-features = false, features = [
+    "cookie",
+    "cookie-private",
+] }
+axum-htmx = { git = "https://github.com/robertwayne/axum-htmx", branch = "main" }
+blake3 = "1"
+bytes = "1"
+dotenvy = "0.15"
+minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
+    "loader",
+] }
+rustc-hash = "1"
+serde = "1"
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres"] }
+tokio = { version = "1", features = ["rt-multi-thread"] }
+tower = { version = "0.4", default-features = false, features = ["util"] }
+tower-http = { version = "0.4", default-features = false, features = [
+    "cors",
+    "compression-br",
+] }
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true

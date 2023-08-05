@@ -1,0 +1,10 @@
+{% extends "_base.html" if base is defined else "_partial.html" %}
+
+{% block main %}
+
+<h1 class="text-4xl font-bold">404 Not Found</h1>
+<p class="text-xl p-2">{{ message }}</p>
+
+<a href="/" class="text-xl text-blue-300">Back Home</a>
+
+{% endblock %}
