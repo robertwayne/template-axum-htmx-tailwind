@@ -35,15 +35,16 @@ impl Config {
         };
 
         #[rustfmt::skip]
-        let encryption_key = std::env::var("ENCRYPTION_KEY");
-
-        #[allow(clippy::unnecessary_unwrap)]
-        let encryption_key =
-            if encryption_key.is_err() || encryption_key.as_ref().unwrap().len() < 64 {
-                set_insecure_encryption_key()
-            } else {
-                encryption_key.unwrap()
-            };
+        let encryption_key = match std::env::var("ENCRYPTION_KEY") {
+            Ok(key) => {
+                if key.len() < 64 {
+                    set_insecure_encryption_key()
+                } else {
+                    key
+                }
+            }
+            Err(_) => set_insecure_encryption_key(),
+        };
 
         Config {
             host,

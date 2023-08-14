@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 mod api_error;
+pub mod asset_cache;
+pub mod config;
 mod routes;
 mod state;
 
@@ -15,11 +17,9 @@ use axum::{
     routing::get,
     Router,
 };
+use axum_cc::{CacheControlLayer, MimeType};
 use axum_extra::extract::cookie::Key;
-use lib::{
-    asset_cache::AssetCache, cache_control::CacheControlLayer, config::Config, leak_alloc,
-    mime::MimeType,
-};
+use config::Config;
 use minijinja::Environment;
 use routes::{
     index::{about, index},
@@ -34,7 +34,11 @@ use tower_http::{
 };
 use tracing_subscriber::{prelude::*, EnvFilter};
 
-use crate::{routes::BaseTemplateData, state::AppState};
+use crate::{asset_cache::AssetCache, routes::BaseTemplateData, state::AppState};
+
+pub fn leak_alloc<T>(value: T) -> &'static T {
+    Box::leak(Box::new(value))
+}
 
 fn main() -> Result<(), Box<dyn error::Error>> {
     dotenvy::dotenv().ok();
@@ -136,7 +140,7 @@ fn static_file_handler(state: SharedState) -> Router {
                 (headers, asset.contents.clone()).into_response()
             }),
         )
-        .layer(CacheControlLayer::new())
+        .layer(CacheControlLayer::default())
         .with_state(state)
 }
 

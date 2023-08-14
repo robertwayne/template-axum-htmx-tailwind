@@ -1,10 +1,10 @@
+use std::collections::HashMap;
+
 use async_compression::tokio::write::BrotliEncoder;
 use axum::extract::Path;
+use axum_cc::MimeType;
 use bytes::Bytes;
-use rustc_hash::FxHashMap;
 use tokio::io::AsyncWriteExt;
-
-use crate::mime::MimeType;
 
 /// A shared reference to the static asset cache.
 pub type SharedAssetCache = &'static AssetCache;
@@ -14,7 +14,7 @@ pub type SharedAssetCache = &'static AssetCache;
 /// disk, as the cache stays in RAM for the life of the server.
 ///
 /// This type should be accessed via the `cache` property in `AppState`.
-pub struct AssetCache(FxHashMap<String, StaticAsset>);
+pub struct AssetCache(HashMap<String, StaticAsset>);
 
 impl AssetCache {
     /// Attempts to return a static asset from the cache from a cache key. If
@@ -37,7 +37,7 @@ impl AssetCache {
     }
 
     pub async fn load_files() -> Self {
-        let mut cache = FxHashMap::default();
+        let mut cache = HashMap::default();
 
         if let Ok(files) = std::fs::read_dir("build") {
             for file in files {

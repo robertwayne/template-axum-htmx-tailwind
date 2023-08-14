@@ -1,10 +1,9 @@
 use axum::{extract::FromRef, response::Html};
 use axum_extra::extract::cookie::Key;
-use lib::asset_cache::SharedAssetCache;
 use minijinja::{context, value::Value};
 use sqlx::PgPool;
 
-use crate::{api_error::ApiError, routes::SharedBaseTemplateData};
+use crate::{api_error::ApiError, asset_cache::SharedAssetCache, routes::SharedBaseTemplateData};
 
 pub type SharedState = &'static AppState;
 
