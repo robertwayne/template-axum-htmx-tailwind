@@ -1,10 +1,22 @@
-#[derive(Debug, Default)]
+use std::fmt::{self, Display, Formatter};
+
+#[derive(Default)]
 pub struct Config {
     pub host: String,
     pub port: u16,
     pub cors_origin: String,
     pub postgres_url: String,
     pub encryption_key: String,
+}
+
+impl Display for Config {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Config {{ host: {}, port: {}, cors_origin: {}, postgres_url: {}, encryption_key: ***** }}",
+            self.host, self.port, self.cors_origin, self.postgres_url
+        )
+    }
 }
 
 impl Config {
