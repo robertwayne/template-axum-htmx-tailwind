@@ -36,6 +36,7 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 
 use crate::{asset_cache::AssetCache, routes::BaseTemplateData, state::AppState};
 
+/// Leak a value as a static reference.
 pub fn leak_alloc<T>(value: T) -> &'static T {
     Box::leak(Box::new(value))
 }
