@@ -35,18 +35,18 @@ impl AppState {
             .map_err(|_| ApiError::TemplateNotFound(template.into()))?;
 
         if boosted {
-            let Ok(r) = template.render(context! {}) else {
-                return Err(ApiError::TemplateRender(template.name().into()));
-            };
-
-            return Ok(Html(r));
+            match template.render(context! {}) {
+                Ok(rendered) => return Ok(Html(rendered)),
+                Err(_) => return Err(ApiError::TemplateRender(template.name().into())),
+            }
         }
 
-        let r = template
-            .render(context! { base => Some(self.base_template_data) })
-            .map_err(|_| ApiError::TemplateRender(template.name().into()))?;
-
-        Ok(Html(r))
+        match template.render(context! {
+            base => Some(self.base_template_data )
+        }) {
+            Ok(rendered) => Ok(Html(rendered)),
+            Err(_) => Err(ApiError::TemplateRender(template.name().into())),
+        }
     }
 
     pub fn render_with_context(
@@ -61,22 +61,18 @@ impl AppState {
             .map_err(|_| ApiError::TemplateNotFound(template.into()))?;
 
         if boosted {
-            let r = template
+            let rendered = template
                 .render(ctx)
                 .map_err(|_| ApiError::TemplateRender(template.name().into()))?;
 
-            return Ok(Html(r));
+            return Ok(Html(rendered));
         }
 
-        let ctx = context! {
-            base => Some(self.base_template_data),
-            ..ctx
-        };
-
-        let r = template
-            .render(ctx)
-            .map_err(|_| ApiError::TemplateRender(template.name().into()))?;
-
-        Ok(Html(r))
+        match template.render(context! {
+            base => Some(self.base_template_data), ..ctx
+        }) {
+            Ok(rendered) => Ok(Html(rendered)),
+            Err(_) => Err(ApiError::TemplateRender(template.name().into())),
+        }
     }
 }
