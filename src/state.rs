@@ -1,5 +1,6 @@
 use axum::{extract::FromRef, response::Html};
 use axum_extra::extract::cookie::Key;
+use axum_htmx::HxBoosted;
 use minijinja::{context, value::Value};
 use sqlx::PgPool;
 
@@ -23,7 +24,11 @@ impl FromRef<&'static AppState> for Key {
 }
 
 impl AppState {
-    pub fn render(&self, boosted: bool, template: &str) -> Result<Html<String>, ApiError> {
+    pub fn render(
+        &self,
+        HxBoosted(boosted): HxBoosted,
+        template: &str,
+    ) -> Result<Html<String>, ApiError> {
         let template = self
             .env
             .get_template(template)
@@ -46,7 +51,7 @@ impl AppState {
 
     pub fn render_with_context(
         &self,
-        boosted: bool,
+        HxBoosted(boosted): HxBoosted,
         template: &str,
         ctx: Value,
     ) -> Result<Html<String>, ApiError> {

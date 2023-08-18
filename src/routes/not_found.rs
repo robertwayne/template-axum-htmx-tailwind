@@ -11,7 +11,7 @@ struct NotFoundTemplate {
 }
 
 pub async fn not_found(
-    HxBoosted(boosted): HxBoosted,
+    boosted: HxBoosted,
     state: State<SharedState>,
     req: Request<Body>,
 ) -> impl IntoResponse {
