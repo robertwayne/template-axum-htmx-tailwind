@@ -11,7 +11,7 @@ publish = false
 async-compression = { version = "0.4", features = ["brotli"] }
 axum = { git = "https://github.com/tokio-rs/axum", branch = "main" }
 axum-cc = { git = "https://github.com/robertwayne/axum-cc", branch = "main" }
-axum-extra = { version = "0.7", default-features = false, features = [
+axum-extra = { version = "0.8", default-features = false, features = [
     "cookie",
     "cookie-private",
 ] }
