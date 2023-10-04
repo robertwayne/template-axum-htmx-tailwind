@@ -20,17 +20,17 @@ fn main() {
         .status()
         .expect("failed to run tailwindcss");
 
-    Command::new("esbuild")
+    Command::new("bun")
         .args([
-            "--bundle",
-            "--outdir=build",
-            "--entry-names=[name].[hash]",
-            "assets/scripts/index.ts",
-            "build/index.css",
+            "build",
             "--minify",
+            "--outdir=build",
+            "--entry-naming",
+            "[name]-[hash].[ext]",
+            "./assets/scripts/index.ts",
         ])
         .status()
-        .expect("failed to run esbuild");
+        .expect("failed to run bin");
 
     std::fs::remove_file("build/index.css").unwrap_or_default();
 

@@ -9,6 +9,8 @@ use tokio::io::AsyncWriteExt;
 /// A shared reference to the static asset cache.
 pub type SharedAssetCache = &'static AssetCache;
 
+const HASH_SPLIT_CHAR: char = '-';
+
 /// Maps static asset filenames to their compressed bytes and content type. This
 /// is used to serve static assets from the build directory without reading from
 /// disk, as the cache stays in RAM for the life of the server.
@@ -30,7 +32,7 @@ impl AssetCache {
     }
 
     fn get_cache_key(path: &str) -> String {
-        let basename = path.split('.').next().unwrap_or_default();
+        let basename = path.split(HASH_SPLIT_CHAR).next().unwrap_or_default();
         let ext = path.split('.').last().unwrap_or_default();
 
         format!("{}.{}", basename, ext)
