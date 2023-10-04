@@ -30,7 +30,7 @@ fn main() {
             "./assets/scripts/index.ts",
         ])
         .status()
-        .expect("failed to run bin");
+        .expect("failed to run bun");
 
     std::fs::remove_file("build/index.css").unwrap_or_default();
 
