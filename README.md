@@ -15,8 +15,10 @@
 
 ## Getting Started
 
-_This template is a work-in-progress. Additionally, it builds against the
-unstable main branch of `axum`, not the crates.io version._
+_This template is a work-in-progress with various experimental features. It
+builds against the unstable main branch of `axum`, not the crates.io version,
+among other things. I cannot recommend using this for a production project right
+now._
 
 ## Notes
 
