@@ -22,8 +22,8 @@ now._
 
 ## Notes
 
-- Internally caches JavaScript and CSS files, compressing them with at startup
-  with `brotli` at max compression level.
+- Internally caches asset files to serve from RAM. JavaScript and CSS files are pre-compressed at startup
+  with `brotli` with max compression level.
 - Compresses HTML fragments with `brotli` at a lower compression
   level via `tower-compression` at runtime.
 - Sets Cache-Control headers for CSS, JS, WEBP, SVG, and WOFF2 by default.
