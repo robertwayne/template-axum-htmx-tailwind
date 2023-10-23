@@ -33,18 +33,21 @@ fn main() {
         .expect("failed to run bun");
 
     std::fs::remove_file("build/index.css").unwrap_or_default();
+    copy_files("public");
+}
 
-    for entry in std::fs::read_dir("public").expect("failed to read dir `public`") {
+fn copy_files(dir: &str) {
+    for entry in std::fs::read_dir(dir).expect("failed to read dir `public`") {
         let entry = entry.expect("failed to read entry");
 
-        let path = entry.path();
+        if entry.file_type().unwrap().is_dir() {
+            copy_files(entry.path().to_str().unwrap());
+        } else {
+            let path = entry.path();
+            let filename = path.file_name().unwrap().to_str().unwrap();
+            let dest = format!("build/{}", filename);
 
-        if path.is_file() {
-            std::fs::copy(
-                path.clone(),
-                path.to_str().unwrap().replace("public/", "build/").as_str(),
-            )
-            .expect("failed to copy file");
+            std::fs::copy(path, dest).expect("failed to copy file");
         }
     }
 }
