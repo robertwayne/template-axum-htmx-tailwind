@@ -6,7 +6,7 @@ fn main() {
 
     std::fs::remove_dir_all("build").unwrap_or_default();
 
-    Command::new("npx")
+    Command::new("bun")
         .args([
             "tailwindcss",
             "-c",
