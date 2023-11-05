@@ -32,8 +32,10 @@ impl AssetCache {
     }
 
     fn get_cache_key(path: &str) -> String {
-        let basename = path.split(HASH_SPLIT_CHAR).next().unwrap_or_default();
-        let ext = path.split('.').last().unwrap_or_default();
+        let mut parts = path.split(|c| c == '.' || c == HASH_SPLIT_CHAR);
+
+        let basename = parts.next().unwrap_or_default();
+        let ext = parts.last().unwrap_or_default();
 
         format!("{}.{}", basename, ext)
     }
