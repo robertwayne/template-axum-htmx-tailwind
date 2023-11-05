@@ -74,7 +74,8 @@
                 getCacheBusterParam: false,
                 globalViewTransitions: false,
                 methodsThatUseUrlParams: ["get"],
-                selfRequestsOnly: false
+                selfRequestsOnly: false,
+                scrollIntoViewOnBoost: true
             },
             parseInterval: parseInterval,
             _: internalEval,
@@ -86,10 +87,10 @@
                 sock.binaryType = htmx.config.wsBinaryType
                 return sock
             },
-            version: "1.9.6"
+            version: "1.9.7"
         }
 
-        /** @type {import("./htmx@1.9.6").HtmxInternalApi} */
+        /** @type {import("./htmx").HtmxInternalApi} */
         var internalAPI = {
             addTriggerHandler: addTriggerHandler,
             bodyContains: bodyContains,
@@ -596,8 +597,12 @@
                 return [closest(elt, normalizeSelector(selector.substr(8)))]
             } else if (selector.indexOf("find ") === 0) {
                 return [find(elt, normalizeSelector(selector.substr(5)))]
+            } else if (selector === "next") {
+                return [elt.nextElementSibling]
             } else if (selector.indexOf("next ") === 0) {
                 return [scanForwardQuery(elt, normalizeSelector(selector.substr(5)))]
+            } else if (selector === "previous") {
+                return [elt.previousElementSibling]
             } else if (selector.indexOf("previous ") === 0) {
                 return [scanBackwardsQuery(elt, normalizeSelector(selector.substr(9)))]
             } else if (selector === 'document') {
@@ -1232,7 +1237,7 @@
 
         /**
          * @param {HTMLElement} elt
-         * @returns {import("./htmx@1.9.6").HtmxTriggerSpecification[]}
+         * @returns {import("./htmx").HtmxTriggerSpecification[]}
          */
         function getTriggerSpecs(elt) {
             var explicitTrigger = getAttributeValue(elt, 'hx-trigger')
@@ -1279,12 +1284,14 @@
                                     var from_arg = consumeUntil(tokens, WHITESPACE_OR_COMMA)
                                     if (from_arg === "closest" || from_arg === "find" || from_arg === "next" || from_arg === "previous") {
                                         tokens.shift()
-                                        from_arg +=
-                                            " " +
-                                            consumeUntil(
-                                                tokens,
-                                                WHITESPACE_OR_COMMA
-                                            )
+                                        var selector = consumeUntil(
+                                            tokens,
+                                            WHITESPACE_OR_COMMA
+                                        )
+                                        // `next` and `previous` allow a selector-less syntax
+                                        if (selector.length > 0) {
+                                            from_arg += " " + selector
+                                        }
                                     }
                                     triggerSpec.from = from_arg
                                 } else if (token === "target" && tokens[0] === ":") {
@@ -1906,32 +1913,39 @@
             }
         }
 
-        function initButtonTracking(elt) {
-            // Handle submit buttons/inputs that have the form attribute set
-            // see https://developer.mozilla.org/docs/Web/HTML/Element/button
-            var form = resolveTarget("#" + getRawAttribute(elt, "form")) || closest(elt, "form")
+        // Handle submit buttons/inputs that have the form attribute set
+        // see https://developer.mozilla.org/docs/Web/HTML/Element/button
+        function maybeSetLastButtonClicked(evt) {
+            var elt = closest(evt.target, "button, input[type='submit']")
+            var internalData = getRelatedFormData(evt)
+            if (internalData) {
+                internalData.lastButtonClicked = elt
+            }
+        };
+        function maybeUnsetLastButtonClicked(evt) {
+            var internalData = getRelatedFormData(evt)
+            if (internalData) {
+                internalData.lastButtonClicked = null
+            }
+        }
+        function getRelatedFormData(evt) {
+            var elt = closest(evt.target, "button, input[type='submit']")
+            if (!elt) {
+                return
+            }
+            var form = resolveTarget('#' + getRawAttribute(elt, 'form')) || closest(elt, 'form')
             if (!form) {
                 return
             }
-
-            var maybeSetLastButtonClicked = function (evt) {
-                var elt = closest(evt.target, "button, input[type='submit']")
-                if (elt !== null) {
-                    var internalData = getInternalData(form)
-                    internalData.lastButtonClicked = elt
-                }
-            }
-
+            return getInternalData(form)
+        }
+        function initButtonTracking(elt) {
             // need to handle both click and focus in:
             //   focusin - in case someone tabs in to a button and hits the space bar
             //   click - on OSX buttons do not focus on click see https://bugs.webkit.org/show_bug.cgi?id=13724
-
             elt.addEventListener('click', maybeSetLastButtonClicked)
             elt.addEventListener('focusin', maybeSetLastButtonClicked)
-            elt.addEventListener('focusout', function (evt) {
-                var internalData = getInternalData(form)
-                internalData.lastButtonClicked = null
-            })
+            elt.addEventListener('focusout', maybeUnsetLastButtonClicked)
         }
 
         function countCurlies(line) {
@@ -1950,7 +1964,9 @@
 
         function addHxOnEventHandler(elt, eventName, code) {
             var nodeData = getInternalData(elt)
-            nodeData.onHandlers = []
+            if (!Array.isArray(nodeData.onHandlers)) {
+                nodeData.onHandlers = []
+            }
             var func
             var listener = function (e) {
                 return maybeEval(elt, function () {
@@ -2107,7 +2123,7 @@
          * be called internally at every extendable execution point in htmx.
          *
          * @param {HTMLElement} elt
-         * @param {(extension:import("./htmx@1.9.6").HtmxExtension) => void} toDo
+         * @param {(extension:import("./htmx").HtmxExtension) => void} toDo
          * @returns void
          */
         function withExtensions(elt, toDo) {
@@ -2166,6 +2182,12 @@
 
         function saveToHistoryCache(url, content, title, scroll) {
             if (!canAccessLocalStorage()) {
+                return
+            }
+
+            if (htmx.config.historyCacheSize <= 0) {
+                // make sure that an eventually already existing cache is purged
+                localStorage.removeItem("htmx-history-cache")
                 return
             }
 
@@ -2434,7 +2456,7 @@
             if (shouldInclude(elt)) {
                 var name = getRawAttribute(elt, "name")
                 var value = elt.value
-                if (elt.multiple) {
+                if (elt.multiple && elt.tagName === "SELECT") {
                     value = toArray(elt.querySelectorAll("option:checked")).map(function (e) { return e.value })
                 }
                 // include file inputs
@@ -2474,6 +2496,9 @@
             var formValues = {}
             var errors = []
             var internalData = getInternalData(elt)
+            if (internalData.lastButtonClicked && !bodyContains(internalData.lastButtonClicked)) {
+                internalData.lastButtonClicked = null
+            }
 
             // only validate when form is directly submitted and novalidate or formnovalidate are not set
             // or if the element has an explicit hx-validate="true" on it
@@ -2632,7 +2657,7 @@
          *
          * @param {HTMLElement} elt
          * @param {string} swapInfoOverride
-         * @returns {import("./htmx@1.9.6").HtmxSwapSpecification}
+         * @returns {import("./htmx").HtmxSwapSpecification}
          */
         function getSwapSpecification(elt, swapInfoOverride) {
             var swapInfo = swapInfoOverride ? swapInfoOverride : getClosestAttributeValue(elt, "hx-swap")
@@ -2641,7 +2666,7 @@
                 "swapDelay": htmx.config.defaultSwapDelay,
                 "settleDelay": htmx.config.defaultSettleDelay
             }
-            if (getInternalData(elt).boosted && !isAnchorLink(elt)) {
+            if (htmx.config.scrollIntoViewOnBoost && getInternalData(elt).boosted && !isAnchorLink(elt)) {
                 swapSpec["show"] = "top"
             }
             if (swapInfo) {
@@ -2711,7 +2736,7 @@
         /**
          *
          * @param {Element} target
-         * @returns {import("./htmx@1.9.6").HtmxSettleInfo}
+         * @returns {import("./htmx").HtmxSettleInfo}
          */
         function makeSettleInfo(target) {
             return { tasks: [], elts: [target] }
@@ -2959,16 +2984,20 @@
 
                 var buttonVerb = getRawAttribute(submitter, "formmethod")
                 if (buttonVerb != null) {
-                    verb = buttonVerb
+                    // ignore buttons with formmethod="dialog"
+                    if (buttonVerb.toLowerCase() !== "dialog") {
+                        verb = buttonVerb
+                    }
                 }
             }
 
+            var confirmQuestion = getClosestAttributeValue(elt, "hx-confirm")
             // allow event-based confirmation w/ a callback
-            if (!confirmed) {
-                var issueRequest = function () {
-                    return issueAjaxRequest(verb, path, elt, event, etc, true)
+            if (confirmed === undefined) {
+                var issueRequest = function (skipConfirmation) {
+                    return issueAjaxRequest(verb, path, elt, event, etc, !!skipConfirmation)
                 }
-                var confirmDetails = { target: target, elt: elt, path: path, verb: verb, triggeringEvent: event, etc: etc, issueRequest: issueRequest }
+                var confirmDetails = { target: target, elt: elt, path: path, verb: verb, triggeringEvent: event, etc: etc, issueRequest: issueRequest, question: confirmQuestion }
                 if (triggerEvent(elt, 'htmx:confirm', confirmDetails) === false) {
                     maybeCall(resolve)
                     return promise
@@ -3069,8 +3098,7 @@
                 }
             }
 
-            var confirmQuestion = getClosestAttributeValue(elt, "hx-confirm")
-            if (confirmQuestion) {
+            if (confirmQuestion && !confirmed) {
                 if (!confirm(confirmQuestion)) {
                     maybeCall(resolve)
                     endRequestLock()
@@ -3529,6 +3557,7 @@
 
                             // if we need to save history, do so
                             if (historyUpdate.type) {
+                                triggerEvent(getDocument().body, 'htmx:beforeHistoryUpdate', mergeObjects({ history: historyUpdate }, responseInfo))
                                 if (historyUpdate.type === "push") {
                                     pushUrlIntoHistory(historyUpdate.path)
                                     triggerEvent(getDocument().body, 'htmx:pushedIntoHistory', { path: historyUpdate.path })
@@ -3538,7 +3567,7 @@
                                 }
                             }
                             if (responseInfo.pathInfo.anchor) {
-                                var anchorTarget = find("#" + responseInfo.pathInfo.anchor)
+                                var anchorTarget = getDocument().getElementById(responseInfo.pathInfo.anchor)
                                 if (anchorTarget) {
                                     anchorTarget.scrollIntoView({ block: 'start', behavior: "auto" })
                                 }
@@ -3615,12 +3644,12 @@
         // Extensions API
         //====================================================================
 
-        /** @type {Object<string, import("./htmx@1.9.6").HtmxExtension>} */
+        /** @type {Object<string, import("./htmx").HtmxExtension>} */
         var extensions = {}
 
         /**
          * extensionBase defines the default functions for all extensions.
-         * @returns {import("./htmx@1.9.6").HtmxExtension}
+         * @returns {import("./htmx").HtmxExtension}
          */
         function extensionBase() {
             return {
@@ -3637,7 +3666,7 @@
          * defineExtension initializes the extension and adds it to the htmx registry
          *
          * @param {string} name
-         * @param {import("./htmx@1.9.6").HtmxExtension} extension
+         * @param {import("./htmx").HtmxExtension} extension
          */
         function defineExtension(name, extension) {
             if (extension.init) {
@@ -3659,8 +3688,8 @@
          * getExtensions searches up the DOM tree to return all extensions that can be applied to a given element
          *
          * @param {HTMLElement} elt
-         * @param {import("./htmx@1.9.6").HtmxExtension[]=} extensionsToReturn
-         * @param {import("./htmx@1.9.6").HtmxExtension[]=} extensionsToIgnore
+         * @param {import("./htmx").HtmxExtension[]=} extensionsToReturn
+         * @param {import("./htmx").HtmxExtension[]=} extensionsToIgnore
          */
         function getExtensions(elt, extensionsToReturn, extensionsToIgnore) {
 
