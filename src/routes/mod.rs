@@ -10,7 +10,7 @@ pub type SharedBaseTemplateData = &'static BaseTemplateData;
 #[derive(Clone, Serialize)]
 pub struct BaseTemplateData {
     styles: String,
-    htmx: String,
+    scripts: String,
 }
 
 impl BaseTemplateData {
@@ -21,12 +21,12 @@ impl BaseTemplateData {
             .path
             .clone();
 
-        let htmx = assets
+        let scripts = assets
             .get("index.js")
             .expect("failed to build base template data: index.js")
             .path
             .clone();
 
-        Self { styles, htmx }
+        Self { styles, scripts }
     }
 }
