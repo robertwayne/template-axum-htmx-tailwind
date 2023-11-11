@@ -8,6 +8,7 @@ fn main() {
 
     Command::new("bun")
         .args([
+            "run",
             "tailwindcss",
             "-c",
             "tailwind.config.js",
