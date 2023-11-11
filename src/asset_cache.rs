@@ -43,62 +43,46 @@ impl AssetCache {
     pub async fn load_files() -> Self {
         let mut cache = HashMap::default();
 
-        if let Ok(files) = std::fs::read_dir("build") {
-            for file in files {
-                let Ok(file) = file else {
-                    continue;
-                };
-
+        let assets: Vec<_> = std::fs::read_dir("build")
+            .unwrap_or_else(|e| panic!("failed to read build directory: {}", e))
+            .filter_map(|entry| entry.ok())
+            .filter_map(|file| {
                 let path = file.path();
-
-                let Some(filename) = path.file_name() else {
-                    continue;
-                };
-
-                let Some(filename) = filename.to_str() else {
-                    continue;
-                };
+                let filename = path.file_name()?.to_str()?;
+                let ext = path.extension()?.to_str()?;
 
                 let stored_path = path
                     .clone()
                     .into_os_string()
                     .into_string()
-                    .unwrap_or_default()
+                    .ok()?
                     .replace("build/", "assets/");
 
-                let Ok(bytes) = std::fs::read(&path) else {
-                    continue;
-                };
+                std::fs::read(&path)
+                    .ok()
+                    .map(|bytes| (stored_path, bytes, ext.to_string(), filename.to_string()))
+            })
+            .collect();
 
-                let Some(ext) = path.extension() else {
-                    continue;
-                };
+        for (stored_path, bytes, ext, filename) in assets {
+            let contents = match ext.as_str() {
+                "css" | "js" => compress_data(&bytes).await.unwrap_or_default(),
+                _ => bytes.into(),
+            };
 
-                let Some(ext) = ext.to_str() else {
-                    continue;
-                };
-
-                let contents = match ext {
-                    "css" | "js" => compress_data(&bytes).await.unwrap_or_default(),
-                    _ => bytes.into(),
-                };
-
-                let key = Self::get_cache_key(filename);
-
-                cache.insert(
-                    key,
-                    StaticAsset {
-                        path: stored_path,
-                        contents,
-                        content_type: MimeType::from_extension(ext),
-                    },
-                );
-            }
+            cache.insert(
+                Self::get_cache_key(&filename),
+                StaticAsset {
+                    path: stored_path,
+                    contents,
+                    content_type: MimeType::from_extension(&ext),
+                },
+            );
         }
 
         tracing::debug!("loaded {} assets", cache.len());
         for (key, asset) in &cache {
-            tracing::debug!("{}: {}", key, asset.path);
+            tracing::debug!("{} -> {}", key, asset.path);
         }
 
         Self(cache)
