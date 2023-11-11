@@ -45,7 +45,7 @@ impl AssetCache {
 
         let assets: Vec<_> = std::fs::read_dir("build")
             .unwrap_or_else(|e| panic!("failed to read build directory: {}", e))
-            .filter_map(|entry| entry.ok())
+            .filter_map(Result::ok)
             .filter_map(|file| {
                 let path = file.path();
                 let filename = path.file_name()?.to_str()?;
