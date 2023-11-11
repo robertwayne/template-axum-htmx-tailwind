@@ -173,7 +173,7 @@ fn import_templates() -> Result<Environment<'static>, Box<dyn error::Error>> {
             let name = path
                 .file_name()
                 .and_then(OsStr::to_str)
-                .ok_or("Failed to convert path to string")?
+                .ok_or("failed to convert path to string")?
                 .to_owned();
 
             let data = std::fs::read_to_string(&path)?;
