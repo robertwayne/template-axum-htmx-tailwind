@@ -26,7 +26,9 @@ fn main() {
             "--minify",
             "--outdir=build",
             "--entry-naming",
-            "[name]-[hash].[ext]",
+            "[name].[hash].[ext]",
+            "--asset-naming",
+            "[name].[hash].[ext]",
             "./assets/scripts/index.ts",
         ])
         .status()
