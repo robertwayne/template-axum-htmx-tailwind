@@ -4,6 +4,7 @@ use crate::asset_cache::SharedAssetCache;
 
 pub mod index;
 pub mod not_found;
+pub mod robots;
 
 pub type SharedBaseTemplateData = &'static BaseTemplateData;
 

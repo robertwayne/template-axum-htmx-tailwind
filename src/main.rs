@@ -5,7 +5,7 @@ mod config;
 mod routes;
 mod state;
 
-use std::{error, net::SocketAddr, str::FromStr, time::Duration};
+use std::{error, ffi::OsStr, net::SocketAddr, str::FromStr, time::Duration};
 
 use axum::{
     extract::{Path, State},
@@ -24,6 +24,7 @@ use minijinja::Environment;
 use routes::{
     index::{about, index},
     not_found::not_found,
+    robots::robots,
 };
 use sqlx::PgPool;
 use state::SharedState;
@@ -162,36 +163,22 @@ fn api_handler(state: SharedState) -> Router {
         .with_state(state)
 }
 
-async fn robots(state: State<SharedState>) -> impl IntoResponse {
-    let Some(asset) = state.assets.get("robots.txt") else {
-        return StatusCode::NOT_FOUND.into_response();
-    };
-
-    if let Ok(string) = String::from_utf8(asset.contents.clone().to_vec()) {
-        return string.into_response();
-    }
-
-    StatusCode::INTERNAL_SERVER_ERROR.into_response()
-}
-
 fn import_templates() -> Result<Environment<'static>, Box<dyn error::Error>> {
     let mut env = Environment::new();
 
-    let files = std::fs::read_dir("templates")?;
+    for entry in std::fs::read_dir("templates")?.filter_map(Result::ok) {
+        let path = entry.path();
 
-    for file in files {
-        let file = file?;
-        let path = file.path();
+        if path.is_file() && path.extension() == Some(OsStr::new("html")) {
+            let name = path
+                .file_name()
+                .and_then(OsStr::to_str)
+                .ok_or("Failed to convert path to string")?
+                .to_owned();
 
-        if path.is_file() {
-            let path = path.to_str().expect("failed to convert path to str");
+            let data = std::fs::read_to_string(&path)?;
 
-            if path.ends_with(".html") {
-                let name = path.replace("templates/", "");
-                let data = std::fs::read_to_string(path)?;
-
-                env.add_template_owned(name, data)?;
-            }
+            env.add_template_owned(name, data)?;
         }
     }
 
