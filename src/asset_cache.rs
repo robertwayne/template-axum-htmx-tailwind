@@ -87,6 +87,16 @@ impl AssetCache {
 
         Self(cache)
     }
+
+    /// Returns an iterator over the static assets in the cache.
+    pub fn values(&self) -> impl Iterator<Item = &StaticAsset> {
+        self.0.values()
+    }
+
+    /// Returns an iterator over the static asset cache keys.
+    pub fn keys(&self) -> impl Iterator<Item = &String> {
+        self.0.keys()
+    }
 }
 
 /// Represents a single static asset from the build directory. Assets are
