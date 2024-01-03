@@ -43,12 +43,14 @@ pub fn leak_alloc<T>(value: T) -> &'static T {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
+    dotenvy::dotenv().ok();
+
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(EnvFilter::from_default_env())
         .init();
 
-    let config = Config::new(".env");
+    let config = Config::new();
 
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()

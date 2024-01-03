@@ -17,6 +17,7 @@ axum-extra = { version = "0.9", default-features = false, features = [
 ] }
 axum-htmx = { git = "https://github.com/robertwayne/axum-htmx", branch = "main" }
 bytes = "1"
+dotenvy = "0.15"
 minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
     "loader",
 ] }
