@@ -17,8 +17,8 @@
 
 _This is an experimental template that I use as a base for my personal projects.
 There are a lot of opinionated and probably controversial design choices that
-I've made here. I cannot recommend using this template for your own projects if
-you're new to Rust._
+I've made here. I cannot recommend using this template for your own projects,
+especially if you're new to Rust._
 
 ## Notes
 
