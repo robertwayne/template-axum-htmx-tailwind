@@ -1,8 +1,8 @@
 use axum::{extract::FromRef, response::Html};
 use axum_extra::extract::cookie::Key;
 use axum_htmx::HxBoosted;
+use deadpool_postgres::Pool as PgPool;
 use minijinja::{context, value::Value};
-use sqlx::PgPool;
 
 use crate::{api_error::ApiError, asset_cache::SharedAssetCache, routes::SharedBaseTemplateData};
 

@@ -20,14 +20,16 @@ use axum::{
 use axum_cc::{CacheControlLayer, MimeType};
 use axum_extra::extract::cookie::Key;
 use config::Config;
+use deadpool::Runtime;
+use deadpool_postgres::Config as PgConfig;
 use minijinja::Environment;
 use routes::{
     index::{about, index},
     not_found::not_found,
     robots::robots,
 };
-use sqlx::PgPool;
 use state::SharedState;
+use tokio_postgres::NoTls;
 use tower_http::{
     compression::{predicate::SizeAbove, CompressionLayer},
     cors::CorsLayer,
@@ -44,7 +46,8 @@ pub fn leak_alloc<T>(value: T) -> &'static T {
     Box::leak(Box::new(value))
 }
 
-fn main() -> Result<(), BoxedError> {
+#[tokio::main]
+async fn main() -> Result<(), BoxedError> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(EnvFilter::from_default_env())
@@ -52,15 +55,13 @@ fn main() -> Result<(), BoxedError> {
 
     let config = Config::new(".env");
 
-    let rt = tokio::runtime::Builder::new_multi_thread()
-        .enable_all()
-        .build()?;
+    let pg = {
+        let mut pg_config = PgConfig::new();
+        pg_config.url = Some(config.postgres_url.clone());
 
-    rt.block_on(serve(config))
-}
+        pg_config.create_pool(Some(Runtime::Tokio1), NoTls)?
+    };
 
-async fn serve(config: Config) -> Result<(), BoxedError> {
-    let pg = PgPool::connect(&config.postgres_url).await?;
     let assets = leak_alloc(AssetCache::load_files().await);
     let base_template_data = leak_alloc(BaseTemplateData::new(assets));
     let env = import_templates()?;

@@ -15,14 +15,16 @@ axum-extra = { version = "0.9", default-features = false, features = [
     "cookie",
     "cookie-private",
 ] }
-axum-htmx = { git = "https://github.com/robertwayne/axum-htmx", branch = "main" }
+axum-htmx = { version = "0.5" }
 bytes = "1"
+deadpool = { version = "0.10", features = ["rt_tokio_1", "managed"] }
+deadpool-postgres = "0.12"
 minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
     "loader",
 ] }
-serde = "1"
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres"] }
-tokio = { version = "1", features = ["rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio-postgres = "0.7"
 tower = { version = "0.4", default-features = false, features = ["util"] }
 tower-http = { version = "0.5", default-features = false, features = [
     "cors",
