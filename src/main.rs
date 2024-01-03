@@ -37,12 +37,14 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 
 use crate::{asset_cache::AssetCache, routes::BaseTemplateData, state::AppState};
 
+pub type BoxedError = Box<dyn error::Error>;
+
 /// Leak a value as a static reference.
 pub fn leak_alloc<T>(value: T) -> &'static T {
     Box::leak(Box::new(value))
 }
 
-fn main() -> Result<(), Box<dyn error::Error>> {
+fn main() -> Result<(), BoxedError> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(EnvFilter::from_default_env())
@@ -57,7 +59,7 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     rt.block_on(serve(config))
 }
 
-async fn serve(config: Config) -> Result<(), Box<dyn error::Error>> {
+async fn serve(config: Config) -> Result<(), BoxedError> {
     let pg = PgPool::connect(&config.postgres_url).await?;
     let assets = leak_alloc(AssetCache::load_files().await);
     let base_template_data = leak_alloc(BaseTemplateData::new(assets));
@@ -160,7 +162,7 @@ fn api_handler(state: SharedState) -> Router {
         .with_state(state)
 }
 
-fn import_templates() -> Result<Environment<'static>, Box<dyn error::Error>> {
+fn import_templates() -> Result<Environment<'static>, BoxedError> {
     let mut env = Environment::new();
 
     for entry in std::fs::read_dir("templates")?.filter_map(Result::ok) {
