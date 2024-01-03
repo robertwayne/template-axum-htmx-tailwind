@@ -43,8 +43,6 @@ pub fn leak_alloc<T>(value: T) -> &'static T {
 }
 
 fn main() -> Result<(), Box<dyn error::Error>> {
-    dotenvy::dotenv().ok();
-
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(EnvFilter::from_default_env())
