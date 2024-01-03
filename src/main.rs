@@ -5,7 +5,7 @@ mod config;
 mod routes;
 mod state;
 
-use std::{error, ffi::OsStr, net::SocketAddr, str::FromStr, time::Duration};
+use std::{error, ffi::OsStr, time::Duration};
 
 use axum::{
     extract::{Path, State},
@@ -48,17 +48,16 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         .with(EnvFilter::from_default_env())
         .init();
 
-    let config = Config::new();
+    let config = Config::new(".env");
 
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()?;
 
-    rt.block_on(serve(&config))
+    rt.block_on(serve(config))
 }
 
-async fn serve(config: &Config) -> Result<(), Box<dyn error::Error>> {
-    let addr = SocketAddr::from_str(&format!("{}:{}", config.host, config.port))?;
+async fn serve(config: Config) -> Result<(), Box<dyn error::Error>> {
     let pg = PgPool::connect(&config.postgres_url).await?;
     let assets = leak_alloc(AssetCache::load_files().await);
     let base_template_data = leak_alloc(BaseTemplateData::new(assets));
@@ -77,9 +76,9 @@ async fn serve(config: &Config) -> Result<(), Box<dyn error::Error>> {
         .nest("/api", api_handler(app_state))
         .nest("/assets", static_file_handler(app_state));
 
-    tracing::info!("Listening on {addr}");
+    tracing::info!("Listening on {}", config.addr());
 
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    let listener = tokio::net::TcpListener::bind(&config.addr()).await?;
 
     axum::serve(
         listener,
@@ -89,7 +88,7 @@ async fn serve(config: &Config) -> Result<(), Box<dyn error::Error>> {
                     .allow_credentials(true)
                     .allow_headers([ACCEPT, CONTENT_TYPE, HeaderName::from_static("csrf-token")])
                     .max_age(Duration::from_secs(86400))
-                    .allow_origin(config.cors_origin.parse::<HeaderValue>()?)
+                    .allow_origin(config.cors_origin)
                     .allow_methods([
                         Method::GET,
                         Method::POST,
