@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use async_compression::tokio::write::BrotliEncoder;
 use axum::extract::Path;
-use axum_cc::MimeType;
 use bytes::Bytes;
 use tokio::io::AsyncWriteExt;
 
@@ -75,7 +74,6 @@ impl AssetCache {
                 StaticAsset {
                     path: stored_path,
                     contents,
-                    content_type: MimeType::from_extension(&ext),
                 },
             );
         }
@@ -106,7 +104,15 @@ impl AssetCache {
 pub struct StaticAsset {
     pub path: String,
     pub contents: Bytes,
-    pub content_type: MimeType,
+}
+
+impl StaticAsset {
+    /// Returns the content type of the asset based on its file extension.
+    pub fn ext(&self) -> Option<&str> {
+        let parts: Vec<&str> = self.path.split('.').collect();
+
+        parts.last().copied()
+    }
 }
 
 async fn compress_data(bytes: &[u8]) -> Result<Bytes, std::io::Error> {

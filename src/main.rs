@@ -8,16 +8,16 @@ mod state;
 use std::{error, ffi::OsStr, time::Duration};
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Request, State},
     http::{
         header::{ACCEPT, CONTENT_ENCODING, CONTENT_TYPE},
         HeaderMap, HeaderName, HeaderValue, Method, StatusCode,
     },
-    response::{Html, IntoResponse},
+    middleware::{self, Next},
+    response::{Html, IntoResponse, Response},
     routing::get,
     Router,
 };
-use axum_cc::{CacheControlLayer, MimeType};
 use axum_extra::extract::cookie::Key;
 use config::Config;
 use deadpool::Runtime;
@@ -115,8 +115,6 @@ async fn main() -> Result<(), BoxedError> {
 }
 
 fn static_file_handler(state: SharedState) -> Router {
-    const PRECOMPRESSED_MIME_TYPES: &[MimeType; 2] = &[MimeType::CSS, MimeType::JS];
-
     Router::new()
         .route(
             "/:file",
@@ -131,10 +129,10 @@ fn static_file_handler(state: SharedState) -> Router {
                 // be inferred as an `octet-stream`
                 headers.insert(
                     CONTENT_TYPE,
-                    HeaderValue::from_static(asset.content_type.as_str()),
+                    HeaderValue::from_static(asset.ext().unwrap_or("")),
                 );
 
-                if PRECOMPRESSED_MIME_TYPES.contains(&asset.content_type) {
+                if [Some("css"), Some("js")].contains(&asset.ext()) {
                     headers.insert(CONTENT_ENCODING, HeaderValue::from_static("br"));
                 }
 
@@ -142,7 +140,7 @@ fn static_file_handler(state: SharedState) -> Router {
                 (headers, asset.contents.clone()).into_response()
             }),
         )
-        .layer(CacheControlLayer::default())
+        .layer(middleware::from_fn(cache_control))
         .with_state(state)
 }
 
@@ -153,7 +151,7 @@ fn route_handler(state: SharedState) -> Router {
         .route("/robots.txt", get(robots))
         .fallback(not_found)
         .with_state(state)
-        .layer(CacheControlLayer::new())
+        .layer(middleware::from_fn(cache_control))
 }
 
 fn api_handler(state: SharedState) -> Router {
@@ -183,4 +181,29 @@ fn import_templates() -> Result<Environment<'static>, BoxedError> {
     }
 
     Ok(env)
+}
+
+async fn cache_control(request: Request, next: Next) -> Response {
+    let mut response = next.run(request).await;
+
+    if let Some(content_type) = response.headers().get(CONTENT_TYPE) {
+        const CACHEABLE_CONTENT_TYPES: [&str; 6] = [
+            "text/css",
+            "application/javascript",
+            "image/svg+xml",
+            "image/webp",
+            "font/woff2",
+            "image/png",
+        ];
+
+        if CACHEABLE_CONTENT_TYPES.iter().any(|&ct| content_type == ct) {
+            let value = format!("public, max-age={}", 60 * 60 * 24);
+
+            if let Ok(value) = HeaderValue::from_str(&value) {
+                response.headers_mut().insert("cache-control", value);
+            }
+        }
+    }
+
+    response
 }
