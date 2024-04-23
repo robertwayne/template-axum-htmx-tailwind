@@ -16,8 +16,8 @@ axum-extra = { version = "0.9", default-features = false, features = [
 ] }
 axum-htmx = { version = "0.5" }
 bytes = "1"
-deadpool = { version = "0.10", features = ["rt_tokio_1", "managed"] }
-deadpool-postgres = "0.12"
+deadpool = { version = "0.11", features = ["rt_tokio_1", "managed"] }
+deadpool-postgres = "0.13"
 minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
     "loader",
 ] }
