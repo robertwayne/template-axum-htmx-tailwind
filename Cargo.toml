@@ -18,10 +18,8 @@ axum-htmx = "0.8"
 bytes = "1"
 deadpool = { version = "0.12", features = ["rt_tokio_1", "managed"] }
 deadpool-postgres = "0.14"
-mimalloc = { version = "0.1.43", features = ["secure"] }
-minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
-    "loader",
-] }
+mimalloc = { version = "0.1", features = ["secure"] }
+minijinja = { version = "2", features = ["loader"] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tokio-postgres = "0.7"
