@@ -1,22 +1,17 @@
 use std::process::Command;
 
 fn main() {
-    println!("cargo:rerun-if-changed=templates");
-    println!("cargo:rerun-if-changed=assets");
+    std::fs::create_dir_all("build").expect("failed to create build directory");
 
-    std::fs::remove_dir_all("build").unwrap_or_default();
-
-    Command::new("bun")
+    Command::new("bunx")
         .args([
-            "run",
-            "tailwindcss",
-            "-c",
-            "tailwind.config.js",
+            "@tailwindcss/cli",
             "-i",
             "assets/styles/index.css",
             "-o",
             "build/index.css",
-            "--minify",
+            "--content",
+            "./templates/**/*.html,./assets/scripts/**/*.ts",
         ])
         .status()
         .expect("failed to run tailwindcss");
@@ -35,7 +30,6 @@ fn main() {
         .status()
         .expect("failed to run bun");
 
-    std::fs::remove_file("build/index.css").unwrap_or_default();
     copy_files("public");
 }
 

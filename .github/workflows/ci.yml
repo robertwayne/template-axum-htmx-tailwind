@@ -1,0 +1,37 @@
+name: ci
+
+env:
+    CARGO_TERM_COLOR: always
+
+on:
+    push:
+        branches:
+            - main
+    pull_request: {}
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@nightly
+              with:
+                  components: clippy, rustfmt
+            - uses: Swatinem/rust-cache@v2
+            - name: clippy
+              run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+              working-directory: server
+            - name: rustfmt
+              run: cargo fmt --all --check
+              working-directory: server
+
+    test:
+        needs: check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: dtolnay/rust-toolchain@nightly
+            - uses: Swatinem/rust-cache@v2
+            - name: Run tests
+              run: cargo test
+              working-directory: server

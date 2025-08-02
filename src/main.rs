@@ -22,6 +22,7 @@ use axum_extra::extract::cookie::Key;
 use config::Config;
 use deadpool::Runtime;
 use deadpool_postgres::Config as PgConfig;
+use mimalloc::MiMalloc;
 use minijinja::Environment;
 use routes::{
     index::{about, index},
@@ -33,6 +34,7 @@ use tokio_postgres::NoTls;
 use tower_http::{
     compression::{predicate::SizeAbove, CompressionLayer},
     cors::CorsLayer,
+    services::ServeDir,
     CompressionLevel,
 };
 use tracing_subscriber::{prelude::*, EnvFilter};
@@ -40,6 +42,9 @@ use tracing_subscriber::{prelude::*, EnvFilter};
 use crate::{asset_cache::AssetCache, routes::BaseTemplateData, state::AppState};
 
 pub type BoxedError = Box<dyn error::Error>;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// Leak a value as a static reference.
 pub fn leak_alloc<T>(value: T) -> &'static T {
@@ -115,33 +120,7 @@ async fn main() -> Result<(), BoxedError> {
 }
 
 fn static_file_handler(state: SharedState) -> Router {
-    Router::new()
-        .route(
-            "/:file",
-            get(|state: State<SharedState>, path: Path<String>| async move {
-                let Some(asset) = state.assets.get_from_path(&path) else {
-                    return StatusCode::NOT_FOUND.into_response();
-                };
-
-                let mut headers = HeaderMap::new();
-
-                // We set the content type explicitly here as it will otherwise
-                // be inferred as an `octet-stream`
-                headers.insert(
-                    CONTENT_TYPE,
-                    HeaderValue::from_static(asset.ext().unwrap_or("")),
-                );
-
-                if [Some("css"), Some("js")].contains(&asset.ext()) {
-                    headers.insert(CONTENT_ENCODING, HeaderValue::from_static("br"));
-                }
-
-                // `bytes::Bytes` clones are cheap
-                (headers, asset.contents.clone()).into_response()
-            }),
-        )
-        .layer(middleware::from_fn(cache_control))
-        .with_state(state)
+    Router::new().fallback_service(ServeDir::new("build"))
 }
 
 fn route_handler(state: SharedState) -> Router {
@@ -183,25 +162,28 @@ fn import_templates() -> Result<Environment<'static>, BoxedError> {
     Ok(env)
 }
 
-async fn cache_control(request: Request, next: Next) -> Response {
+pub async fn cache_control(request: Request, next: Next) -> Response {
     let mut response = next.run(request).await;
 
     if let Some(content_type) = response.headers().get(CONTENT_TYPE) {
-        const CACHEABLE_CONTENT_TYPES: [&str; 6] = [
+        const CACHEABLE_CONTENT_TYPES: [&str; 9] = [
             "text/css",
-            "application/javascript",
+            "text/javascript",
             "image/svg+xml",
             "image/webp",
             "font/woff2",
             "image/png",
+            "image/jpeg",
+            "image/jpg",
+            "image/gif",
         ];
 
-        if CACHEABLE_CONTENT_TYPES.iter().any(|&ct| content_type == ct) {
-            let value = format!("public, max-age={}", 60 * 60 * 24);
-
-            if let Ok(value) = HeaderValue::from_str(&value) {
-                response.headers_mut().insert("cache-control", value);
-            }
+        if CACHEABLE_CONTENT_TYPES
+            .iter()
+            .any(|&ct| content_type.to_str().unwrap_or("").starts_with(ct))
+        {
+            let value = HeaderValue::from_static("public, max-age=31536000");
+            response.headers_mut().insert("cache-control", value);
         }
     }
 

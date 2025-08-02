@@ -1,7 +1,7 @@
 [package]
 name = "template-axum-htmx-tailwind"
 authors = ["Rob Wagner <rob@sombia.com>"]
-license = ""
+license = "MIT-0"
 repository = "https://github.com/robertwayne/template-axum-htmx-tailwind"
 version = "0.1.0"
 edition = "2021"
@@ -9,24 +9,26 @@ publish = false
 
 [dependencies]
 async-compression = { version = "0.4", features = ["brotli"] }
-axum = { version = "0.7" }
-axum-extra = { version = "0.9", default-features = false, features = [
+axum = "0.8"
+axum-extra = { version = "0.10", default-features = false, features = [
     "cookie",
     "cookie-private",
 ] }
-axum-htmx = { version = "0.5" }
+axum-htmx = "0.8"
 bytes = "1"
 deadpool = { version = "0.12", features = ["rt_tokio_1", "managed"] }
-deadpool-postgres = "0.13"
+deadpool-postgres = "0.14"
+mimalloc = { version = "0.1.43", features = ["secure"] }
 minijinja = { git = "https://github.com/mitsuhiko/minijinja", branch = "main", features = [
     "loader",
 ] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 tokio-postgres = "0.7"
-tower = { version = "0.4", default-features = false, features = ["util"] }
-tower-http = { version = "0.5", default-features = false, features = [
+tower = { version = "0.5", default-features = false, features = ["util"] }
+tower-http = { version = "0.6", default-features = false, features = [
     "cors",
+    "fs",
     "compression-br",
 ] }
 tracing = { version = "0.1", default-features = false, features = ["std"] }

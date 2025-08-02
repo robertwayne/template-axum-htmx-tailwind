@@ -82,8 +82,17 @@ impl Config {
 
             let parts = line.splitn(2, '=').collect::<Vec<_>>();
 
-            let key = parts[0].trim().to_string();
-            let value = parts[1].trim().to_string();
+            let key = parts
+                .first()
+                .expect("failed to parse a key")
+                .trim()
+                .to_string();
+
+            let value = parts
+                .get(1)
+                .expect("failed to parse a value")
+                .trim()
+                .to_string();
 
             if key.is_empty() || key.contains(['=']) || value.is_empty() {
                 continue;
