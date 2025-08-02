@@ -8,13 +8,13 @@ mod state;
 use std::{error, ffi::OsStr, time::Duration};
 
 use axum::{
-    extract::{Path, Request, State},
+    extract::Request,
     http::{
-        header::{ACCEPT, CONTENT_ENCODING, CONTENT_TYPE},
-        HeaderMap, HeaderName, HeaderValue, Method, StatusCode,
+        header::{ACCEPT, CONTENT_TYPE},
+        HeaderName, HeaderValue, Method,
     },
     middleware::{self, Next},
-    response::{Html, IntoResponse, Response},
+    response::{Html, Response},
     routing::get,
     Router,
 };
@@ -82,7 +82,7 @@ async fn main() -> Result<(), BoxedError> {
     let router = Router::new()
         .merge(route_handler(app_state))
         .nest("/api", api_handler(app_state))
-        .nest("/assets", static_file_handler(app_state));
+        .nest("/assets", static_file_handler());
 
     tracing::info!("Listening on {}", config.addr());
 
@@ -119,7 +119,7 @@ async fn main() -> Result<(), BoxedError> {
     Ok(())
 }
 
-fn static_file_handler(state: SharedState) -> Router {
+fn static_file_handler() -> Router {
     Router::new().fallback_service(ServeDir::new("build"))
 }
 
